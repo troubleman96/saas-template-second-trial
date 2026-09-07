@@ -1,78 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
 
-const schema = z.object({
-  email: z.string().email("Enter a valid email"),
-});
-
-type ForgotForm = z.infer<typeof schema>;
+type ForgotForm = {
+  email: string;
+};
 
 export default function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotForm>({
-    resolver: zodResolver(schema),
-  });
-
-  function onSubmit() {
-    setSent(true);
-    toast.success("Reset instructions sent");
-  }
-
-  if (sent) {
-    return (
-      <div>
-        <h1 className="mb-1">Check your email</h1>
-        <p className="mt-1 mb-4 text-sm text-[var(--coollabs-subtle)]">
-          We&apos;ve sent password reset instructions to your email.
-        </p>
-        <div className="auth-card-body space-y-4">
-          <p className="text-sm text-[var(--coollabs-subtle)]">
-            Haven&apos;t received an email? Check your spam folder or try again.
-          </p>
-          <Link href="/auth/login" className="button button-primary w-full justify-center">
-            Back to sign in
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const { register, handleSubmit } = useForm<ForgotForm>();
+  const onSubmit = handleSubmit(() => {});
 
   return (
-    <div>
-      <h1 className="mb-1">Reset password</h1>
-      <p className="mt-1 mb-4 text-sm text-[var(--coollabs-subtle)]">
-        Enter your email and we&apos;ll send you reset instructions.
-      </p>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 auth-card-body">
-        <div>
-          <label className="mb-1 block text-xs font-medium">Email</label>
-          <input type="email" {...register("email")} className="input" placeholder="you@example.com" />
-          {errors.email && (
-            <p className="mt-1 text-xs text-[var(--color-error)]">{errors.email.message}</p>
-          )}
-        </div>
-        <button type="submit" className="button button-primary w-full">
-          Send reset instructions
-        </button>
-      </form>
-
-      <div className="auth-card-footer">
-        <span>Remembered your password?</span>
-        <Link href="/auth/login" className="font-medium text-[var(--color-accent)] hover:underline">
-          Sign in
-        </Link>
+    <>
+      <div className="auth-card-heading">
+        <h1>Reset your password</h1>
+        <p>Enter your email address and we&apos;ll send you a reset link.</p>
       </div>
-    </div>
+
+      <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-4">
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">Email</label>
+        <input
+          type="email"
+          placeholder="you@example.com"
+          className="input"
+          required
+          {...register("email")}
+        />
+      </div>
+      <button type="submit" className="button w-full justify-center" data-highlighted>
+        Send reset link
+      </button>
+    </form>
+
+    <p className="mt-6 text-center text-sm text-[var(--color-fg-dim)]">
+        Remember your password?{" "}
+        <Link href="/auth/login" className="auth-text-link">
+          Log in
+        </Link>
+      </p>
+    </>
   );
 }

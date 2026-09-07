@@ -1,79 +1,84 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Info, AlertTriangle, XCircle, BellOff } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Info } from "lucide-react";
 import { notifications } from "@/lib/mock-data";
-import { toast } from "sonner";
-
-const typeConfig = {
-  success: { icon: Check, color: "text-green-500 bg-green-500/10" },
-  info: { icon: Info, color: "text-blue-500 bg-blue-500/10" },
-  warning: { icon: AlertTriangle, color: "text-yellow-500 bg-yellow-500/10" },
-  error: { icon: XCircle, color: "text-red-500 bg-red-500/10" },
-};
+import { useState } from "react";
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState(notifications);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
-  function markAllRead() {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    toast.success("All notifications marked as read");
-  }
+  const toggleRead = (id: string) => {
+    setReadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const iconMap: Record<string, React.ReactNode> = {
+    success: <CheckCircle className="size-4 text-[var(--color-success)]" />,
+    error: <XCircle className="size-4 text-[var(--color-error)]" />,
+    info: <Info className="size-4 text-[var(--color-coollabs)]" />,
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-          <p className="text-sm text-[var(--coollabs-subtle)]">
-            History of all system notifications.
-          </p>
-        </div>
-        <button
-          onClick={markAllRead}
-          className="button button-ghost"
-        >
-          <Check className="h-4 w-4" />
-          Mark all read
-        </button>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-xl font-semibold text-black dark:text-[var(--color-fg)]">Notifications</h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+          View all notifications and activity history
+        </p>
       </div>
 
-      <div className="layer-card">
-        <div className="layer-card-body p-0">
-          {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <BellOff className="h-8 w-8 text-[var(--coollabs-subtle)]" />
-              <p className="mt-3 text-sm text-[var(--coollabs-subtle)]">No notifications</p>
+      {notifications.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <Bell className="size-5" />
+          </div>
+          <h2 className="empty-state-title">No notifications</h2>
+          <p className="empty-state-description">You&apos;re all caught up!</p>
+        </div>
+      ) : (
+        <section className="application-settings-section">
+          <div className="application-settings-section-header">
+            <div>
+              <h2>All notifications</h2>
+              <p>Recent activity across your workspace.</p>
             </div>
-          ) : (
-            <div className="divide-y divide-[var(--coollabs-fill)]">
-              {items.map((n) => {
-                const config = typeConfig[n.type];
-                const Icon = config.icon;
-                return (
-                  <div key={n.id} className={`flex items-start gap-4 px-4 py-4 ${!n.read ? "bg-[var(--coollabs-recessed)]" : ""}`}>
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${config.color}`}>
-                      <Icon className="h-4 w-4" />
+          </div>
+          <div className="application-settings-section-body">
+            <div className="flex flex-col gap-2">
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors cursor-pointer ${
+                    readIds.has(n.id)
+                      ? "border-neutral-200 bg-neutral-50 dark:border-white/[0.06] dark:bg-white/[0.02]"
+                      : "border-neutral-200 bg-white dark:border-white/[0.06] dark:bg-[var(--coollabs-base)]"
+                  }`}
+                  onClick={() => toggleRead(n.id)}
+                >
+                  <div className="mt-0.5 shrink-0">
+                    {iconMap[n.type] || iconMap.info}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-black dark:text-[var(--color-fg)]">
+                      {n.title}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className={`text-sm font-medium ${!n.read ? "font-semibold" : ""}`}>
-                          {n.title}
-                        </p>
-                        {!n.read && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" />
-                        )}
-                      </div>
-                      <p className="text-sm text-[var(--coollabs-subtle)] mt-0.5">{n.message}</p>
-                      <p className="text-xs text-[var(--coollabs-faint)] mt-1">{n.timestamp}</p>
+                    <div className="text-xs text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                      {n.message}
                     </div>
                   </div>
-                );
-              })}
+                  <span className="text-[11px] text-neutral-400 dark:text-[var(--color-fg-faint)] shrink-0">
+                    {n.timestamp}
+                  </span>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

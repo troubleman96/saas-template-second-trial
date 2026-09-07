@@ -5,198 +5,218 @@ import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   Play,
-  Pause,
-  RotateCw,
+  Square,
+  RotateCcw,
   Trash2,
+  Settings,
+  FileText,
+  BarChart3,
   ExternalLink,
-  GitBranch,
-  Server,
-  Clock,
 } from "lucide-react";
 import { applications } from "@/lib/mock-data";
 import { useState } from "react";
-import { ConfirmModal } from "@/components/modals/confirm-modal";
-import { toast } from "sonner";
 
-const statusColors = {
-  running: "status-running",
-  stopped: "status-stopped",
-  deploying: "status-deploying",
-  degraded: "status-degraded",
-  failed: "status-failed",
-};
+type Tab = "general" | "logs" | "metrics" | "settings";
+
+const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: "general", label: "General", icon: <Settings className="size-4" /> },
+  { id: "logs", label: "Logs", icon: <FileText className="size-4" /> },
+  { id: "metrics", label: "Metrics", icon: <BarChart3 className="size-4" /> },
+  { id: "settings", label: "Settings", icon: <Settings className="size-4" /> },
+];
 
 export default function ApplicationDetailPage() {
   const params = useParams();
-  const app = applications.find((a) => a.id === params.id);
-  const [activeTab, setActiveTab] = useState("general");
+  const id = params.id as string;
+  const app = applications.find((a) => a.id === id) || applications[0];
+  const [activeTab, setActiveTab] = useState<Tab>("general");
   const [showDelete, setShowDelete] = useState(false);
 
-  if (!app) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <h2 className="text-lg font-semibold">Application not found</h2>
-        <Link href="/applications" className="mt-2 text-sm text-[var(--color-accent)] hover:underline">
-          Back to applications
-        </Link>
-      </div>
-    );
-  }
-
-  const tabs = [
-    { id: "general", label: "General" },
-    { id: "logs", label: "Logs" },
-    { id: "metrics", label: "Metrics" },
-    { id: "settings", label: "Settings" },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-6">
+      {/* Back + heading */}
+      <div>
         <Link
           href="/applications"
-          className="rounded-lg p-1.5 text-[var(--coollabs-subtle)] hover:bg-[var(--coollabs-fill)]"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-fg-dim)] hover:text-[var(--color-fg)] mb-3"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="size-4" />
+          Applications
         </Link>
-        <div className="flex-1">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{app.name}</h1>
-            <span className={`status-badge ${statusColors[app.status]}`}>{app.status}</span>
+            <div className="flex size-10 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.04]">
+              <svg className="size-5 text-[var(--color-fg-faint)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-black dark:text-[var(--color-fg)]">
+                {app.name}
+              </h1>
+              <p className="text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                {app.description || "No description"}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-[var(--coollabs-subtle)]">{app.description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="button button-secondary">
-            <Play className="h-3.5 w-3.5" /> Start
-          </button>
-          <button className="button button-secondary">
-            <Pause className="h-3.5 w-3.5" /> Stop
-          </button>
-          <button className="button button-secondary">
-            <RotateCw className="h-3.5 w-3.5" /> Restart
-          </button>
-          <button onClick={() => setShowDelete(true)} className="button button-danger">
-            <Trash2 className="h-3.5 w-3.5" /> Delete
-          </button>
+          <span className={`status-badge ${
+            app.status === "running"
+              ? "status-badge-success"
+              : app.status === "stopped"
+              ? "status-badge-neutral"
+              : "status-badge-error"
+          }`}>
+            <span className="status-badge-dot" />
+            <span>{app.status}</span>
+          </span>
         </div>
       </div>
 
-      <div className="layer-card">
-        <div className="layer-card-header">
-          <div className="flex items-center gap-6">
-            {app.url && (
-              <a
-                href={app.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
-              >
-                <ExternalLink className="h-3 w-3" /> {app.url}
-              </a>
-            )}
-            <span className="flex items-center gap-1.5 text-xs text-[var(--coollabs-subtle)]">
-              <GitBranch className="h-3 w-3" /> {app.branch}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-[var(--coollabs-subtle)]">
-              <Server className="h-3 w-3" /> {app.server}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-[var(--coollabs-subtle)]">
-              <Clock className="h-3 w-3" /> {app.lastDeployed}
-            </span>
-          </div>
-        </div>
+      {/* Action buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="button">
+          <Play className="size-4" />
+          Start
+        </button>
+        <button type="button" className="button">
+          <Square className="size-4" />
+          Stop
+        </button>
+        <button type="button" className="button">
+          <RotateCcw className="size-4" />
+          Restart
+        </button>
+        <div className="flex-1" />
+        <button
+          type="button"
+          className="button text-[var(--color-error)]"
+          onClick={() => setShowDelete(true)}
+        >
+          <Trash2 className="size-4" />
+          Delete
+        </button>
       </div>
 
-      <div className="flex gap-1 border-b border-[var(--coollabs-fill)]">
+      {/* Tabs */}
+      <div className="flex gap-0.5 border-b border-neutral-200 dark:border-white/[0.06]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`flex items-center gap-1.5 h-8 px-2.5 rounded-t-md text-[13px] font-medium transition-colors ${
               activeTab === tab.id
-                ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                : "border-transparent text-[var(--coollabs-subtle)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--coollabs-base)] text-[var(--color-accent)] border border-neutral-200 dark:border-white/[0.06] border-b-transparent -mb-px"
+                : "text-neutral-500 dark:text-[var(--color-fg-dim)] hover:bg-neutral-100 dark:hover:bg-white/[0.05] hover:text-black dark:hover:text-[var(--color-fg)]"
             }`}
           >
+            {tab.icon}
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="layer-card">
-        <div className="layer-card-body">
-          {activeTab === "general" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Type
-                  </label>
-                  <p className="text-sm">{app.type}</p>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Branch
-                  </label>
-                  <p className="text-sm">{app.branch}</p>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Server
-                  </label>
-                  <p className="text-sm">{app.server}</p>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Last Deployed
-                  </label>
-                  <p className="text-sm">{app.lastDeployed}</p>
-                </div>
+      {/* Tab content */}
+      <div>
+        {activeTab === "general" && (
+          <div className="application-settings-section">
+            <div className="application-settings-section-header">
+              <div>
+                <h2>General information</h2>
+                <p>Basic details about this application.</p>
               </div>
             </div>
-          )}
-          {activeTab === "logs" && (
-            <div className="rounded-lg bg-[var(--color-base)] p-4 font-mono text-xs text-green-400">
-              <p>[2024-01-15 10:30:00] Application started</p>
-              <p>[2024-01-15 10:30:01] Listening on port 3000</p>
-              <p>[2024-01-15 10:30:02] Ready to accept connections</p>
-            </div>
-          )}
-          {activeTab === "metrics" && (
-            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-[var(--coollabs-line)]">
-              <p className="text-sm text-[var(--coollabs-subtle)]">Metrics chart placeholder</p>
-            </div>
-          )}
-          {activeTab === "settings" && (
-            <div className="space-y-4">
+            <div className="application-settings-section-body grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                  Application Name
-                </label>
-                <input type="text" defaultValue={app.name} className="input max-w-md" />
+                <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">Name</label>
+                <input type="text" defaultValue={app.name} className="input" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                  Description
-                </label>
-                <textarea defaultValue={app.description} className="input max-w-md" />
+                <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">Description</label>
+                <input type="text" defaultValue={app.description || ""} className="input" />
               </div>
-              <button className="button button-primary">Save Changes</button>
+              {app.git_repository && (
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">Git repository</label>
+                  <div className="flex items-center gap-2">
+                    <input type="text" value={app.git_repository} readOnly className="input flex-1" />
+                    <a href={app.git_repository} target="_blank" rel="noopener noreferrer" className="icon-button">
+                      <ExternalLink className="size-4" />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {activeTab === "logs" && (
+          <div className="application-settings-section">
+            <div className="application-settings-section-body">
+              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-neutral-300 dark:border-white/[0.1]">
+                <span className="text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                  Logs will appear here when the application is running.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "metrics" && (
+          <div className="application-settings-section">
+            <div className="application-settings-section-body">
+              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-neutral-300 dark:border-white/[0.1]">
+                <span className="text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                  Chart placeholder — CPU and memory metrics will appear here.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="application-settings-section">
+            <div className="application-settings-section-header">
+              <div>
+                <h2>Danger zone</h2>
+                <p>Irreversible actions for this application.</p>
+              </div>
+            </div>
+            <div className="application-settings-section-body">
+              <button type="button" className="button text-[var(--color-error)]">
+                <Trash2 className="size-4" />
+                Delete application
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <ConfirmModal
-        open={showDelete}
-        onClose={() => setShowDelete(false)}
-        onConfirm={() => toast.success("Application deleted")}
-        title="Delete Application"
-        message={`Are you sure you want to delete "${app.name}"? This will remove all associated data and cannot be undone.`}
-        confirmLabel="Delete Application"
-        variant="danger"
-      />
+      {/* Delete modal */}
+      {showDelete && (
+        <div className="modal-overlay">
+          <div className="modal-backdrop" onClick={() => setShowDelete(false)} />
+          <div className="modal-panel">
+            <header className="modal-header">
+              <h3>Delete application</h3>
+              <button type="button" className="icon-button" onClick={() => setShowDelete(false)} aria-label="Close">
+                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </header>
+            <div className="modal-body">
+              <p className="text-sm text-[var(--color-fg-dim)]">
+                Are you sure you want to delete <strong>{app.name}</strong>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="button" onClick={() => setShowDelete(false)}>Cancel</button>
+              <button type="button" className="button text-[var(--color-error)]" onClick={() => setShowDelete(false)}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

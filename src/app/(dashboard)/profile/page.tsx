@@ -1,141 +1,305 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
-import { Save, Lock, Trash2 } from "lucide-react";
-import { ConfirmModal } from "@/components/modals/confirm-modal";
-import { currentUser } from "@/lib/mock-data";
+import { X, ShieldAlert, ShieldCheck } from "lucide-react";
 
 export default function ProfilePage() {
-  const [name, setName] = useState(currentUser.name);
-  const [email, setEmail] = useState(currentUser.email);
-  const [showDelete, setShowDelete] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailStep, setEmailStep] = useState<"request" | "verify">("request");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [name, setName] = useState("Emmanuel Lugenge");
+  const [email] = useState("itslugenge@gmail.com");
+  const [hasAvatar] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
-        <p className="text-sm text-[var(--coollabs-subtle)]">
-          Manage your personal account settings.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-[var(--coollabs-hairline)] bg-[var(--coollabs-elevated)] p-6 xl:sticky xl:top-[calc(3rem+1.75rem)] xl:self-start">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-accent)] text-2xl font-semibold text-white">
-            {currentUser.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+    <div className="mt-8 flex w-full max-w-none flex-col gap-6 lg:mt-3">
+      {/* ============ PROFILE PICTURE ============ */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
+          <div>
+            <h2>Profile picture</h2>
+            <p>Upload a JPG, PNG, or WebP image.</p>
           </div>
-          <div className="text-center">
-            <p className="font-medium">{name}</p>
-            <p className="text-sm text-[var(--coollabs-subtle)]">{email}</p>
-          </div>
-          <span className="rounded-full bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-500">
-            {currentUser.role}
-          </span>
         </div>
-
-        <div className="space-y-6 xl:col-span-2">
-          <div className="layer-card">
-            <div className="layer-card-header">
-              <h3>Account</h3>
+        <div className="application-settings-section-body flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-200 text-2xl font-semibold text-neutral-700 dark:bg-white/[0.1] dark:text-[var(--color-fg)]">
+            {avatarPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarPreview} alt="Profile picture preview" className="h-full w-full object-cover" />
+            ) : (
+              <span>E</span>
+            )}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="button cursor-pointer">
+                Browse…
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setAvatarPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+              {hasAvatar && (
+                <button type="button" className="button text-[var(--color-error)]">
+                  Remove
+                </button>
+              )}
             </div>
-            <div className="layer-card-body space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Name
-                  </label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Email
-                  </label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
-                </div>
-              </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ PROFILE DETAILS ============ */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
+          <div>
+            <h2>Profile details</h2>
+            <p>Your display name and verified sign-in address.</p>
+          </div>
+        </div>
+        <div className="application-settings-section-body grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Name
+              <span className="ml-0.5 text-[var(--color-accent)]">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input"
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">Email</label>
+            <div className="flex items-end gap-2">
+              <input type="email" value={email} readOnly className="input flex-1" />
               <button
-                onClick={() => toast.success("Profile updated")}
-                className="button button-primary"
+                type="button"
+                className="button"
+                onClick={() => setEmailModalOpen(true)}
               >
-                <Save className="h-4 w-4" />
-                Save Changes
+                Change
               </button>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="layer-card">
-            <div className="layer-card-header">
-              <h3>Change Password</h3>
-            </div>
-            <div className="layer-card-body space-y-4">
-              <div className="flex items-center gap-2 text-sm text-[var(--coollabs-subtle)]">
-                <Lock className="h-4 w-4" />
-                Password management requires re-authentication.
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Current Password
-                  </label>
-                  <input type="password" className="input" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    New Password
-                  </label>
-                  <input type="password" className="input" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-                    Confirm Password
-                  </label>
-                  <input type="password" className="input" />
-                </div>
+      {/* ============ EMAIL CHANGE MODAL ============ */}
+      {emailModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-backdrop" onClick={() => setEmailModalOpen(false)} />
+          <div className="modal-panel application-settings-form">
+            <header className="modal-header">
+              <div>
+                <h3>{emailStep === "verify" ? "Verify new email" : "Change email"}</h3>
+                <p className="mt-1 text-xs text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                  {emailStep === "verify"
+                    ? "A six-digit verification code was sent."
+                    : "A six-digit verification code will be sent to the new address."}
+                </p>
               </div>
               <button
-                onClick={() => toast.success("Password updated")}
-                className="button button-secondary"
+                type="button"
+                className="icon-button shrink-0"
+                onClick={() => {
+                  setEmailModalOpen(false);
+                  setEmailStep("request");
+                }}
+                aria-label="Close"
               >
-                Update Password
+                <X className="size-4" />
               </button>
-            </div>
-          </div>
-
-          <div className="layer-card">
-            <div className="layer-card-header">
-              <h3 className="text-[var(--color-error)]">Danger Zone</h3>
-            </div>
-            <div className="layer-card-body space-y-4">
-              <div className="flex items-center justify-between gap-4">
+            </header>
+            {emailStep === "verify" ? (
+              <div className="modal-body space-y-4">
                 <div>
-                  <p className="text-sm font-medium">Delete Account</p>
-                  <p className="text-xs text-[var(--coollabs-subtle)]">
-                    Permanently delete your account and all associated data.
+                  <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+                    Verification code
+                  </label>
+                  <input type="text" inputMode="numeric" maxLength={6} className="input" required />
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                  The code expires after 10 minutes.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button type="button" className="button">
+                    Resend code
+                  </button>
+                  <button
+                    type="button"
+                    className="button"
+                    data-highlighted
+                    onClick={() => setEmailStep("request")}
+                  >
+                    Verify email
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="modal-body space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+                    New email address
+                  </label>
+                  <input type="email" className="input" required autoFocus />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="button"
+                    data-highlighted
+                    onClick={() => setEmailStep("verify")}
+                  >
+                    Send code
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============ PASSWORD ============ */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
+          <div>
+            <h2>Password</h2>
+            <p>Changing your password signs out every active session.</p>
+          </div>
+          <button type="button" className="button">
+            Change password
+          </button>
+        </div>
+        <div className="application-settings-section-body grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Current password
+            </label>
+            <input type="password" className="input" required />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              New password
+            </label>
+            <input type="password" className="input" required />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Confirm new password
+            </label>
+            <input type="password" className="input" required />
+          </div>
+        </div>
+      </section>
+
+      {/* ============ TWO-FACTOR AUTHENTICATION ============ */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
+          <div>
+            <h2>Two-factor authentication</h2>
+            <p>Add a time-based one-time password to protect your account.</p>
+          </div>
+          {!twoFactorEnabled && !show2FASetup && (
+            <button
+              type="button"
+              className="button"
+              onClick={() => setShow2FASetup(true)}
+            >
+              Configure 2FA
+            </button>
+          )}
+        </div>
+        <div className="application-settings-section-body">
+          {show2FASetup && !twoFactorEnabled ? (
+            <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+              {/* QR code placeholder */}
+              <div className="flex aspect-square items-center justify-center rounded-[10px] border border-neutral-200 bg-white p-5 dark:border-white/[0.07]">
+                <div className="flex flex-col items-center gap-2 text-[var(--color-fg-faint)]">
+                  <ShieldAlert className="size-16" />
+                  <span className="text-xs">QR Code</span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-black dark:text-[var(--color-fg)]">Finish setup</h3>
+                  <p className="mt-1 text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+                    Scan the QR code, then enter the current code from your authenticator.
                   </p>
                 </div>
-                <button onClick={() => setShowDelete(true)} className="button button-danger">
-                  <Trash2 className="h-4 w-4" />
-                  Delete Account
-                </button>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+                      One-time code
+                    </label>
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" className="input" required />
+                  </div>
+                  <button
+                    type="button"
+                    className="button"
+                    data-highlighted
+                    onClick={() => setTwoFactorEnabled(true)}
+                  >
+                    Validate 2FA
+                  </button>
+                </div>
+                <div>
+                  <button type="button" className="button">
+                    Show manual setup
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          ) : twoFactorEnabled ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button type="button" className="button">
+                  Regenerate recovery codes
+                </button>
+                <button
+                  type="button"
+                  className="button text-[var(--color-error)]"
+                  onClick={() => {
+                    setTwoFactorEnabled(false);
+                    setShow2FASetup(false);
+                  }}
+                >
+                  Disable 2FA
+                </button>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-white/[0.07] dark:bg-white/[0.025]">
+                <ShieldCheck className="size-5 text-[var(--color-success)]" />
+                <span className="text-sm font-medium text-[var(--color-fg)]">
+                  Two-factor authentication is enabled
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state min-h-[11rem]">
+              <div className="empty-state-icon">
+                <ShieldAlert className="size-5" />
+              </div>
+              <h2 className="empty-state-title">Two-factor authentication is off</h2>
+              <p className="empty-state-description">
+                Configure an authenticator app to add another sign-in check.
+              </p>
+            </div>
+          )}
         </div>
-      </div>
-
-      <ConfirmModal
-        open={showDelete}
-        onClose={() => setShowDelete(false)}
-        onConfirm={() => toast.error("Account deletion requested")}
-        title="Delete Account"
-        message="This will permanently delete your account, all teams, applications, and data. This action cannot be undone."
-        confirmLabel="Delete Account"
-        variant="danger"
-      />
+      </section>
     </div>
   );
 }

@@ -1,113 +1,77 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
-import { AlertTriangle, XCircle, Info, AlertOctagon, Check } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, CheckCircle } from "lucide-react";
 import { alerts } from "@/lib/mock-data";
-import { ConfirmModal } from "@/components/modals/confirm-modal";
-
-const severityConfig = {
-  critical: {
-    icon: AlertOctagon,
-    color: "text-red-500 bg-red-500/10",
-    badge: "bg-red-500/15 text-red-500",
-  },
-  error: {
-    icon: XCircle,
-    color: "text-red-500 bg-red-500/10",
-    badge: "bg-red-500/15 text-red-500",
-  },
-  warning: {
-    icon: AlertTriangle,
-    color: "text-yellow-500 bg-yellow-500/10",
-    badge: "bg-yellow-500/15 text-yellow-500",
-  },
-  info: {
-    icon: Info,
-    color: "text-blue-500 bg-blue-500/10",
-    badge: "bg-blue-500/15 text-blue-500",
-  },
-};
 
 export default function AlertsPage() {
-  const [items, setItems] = useState(alerts);
-  const [resolveId, setResolveId] = useState<string | null>(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+
+  const typeConfig = {
+    critical: {
+      icon: <AlertCircle className="size-4 shrink-0" />,
+      badgeClass: "status-badge-error",
+      calloutClass: "callout-danger",
+    },
+    warning: {
+      icon: <AlertTriangle className="size-4 shrink-0" />,
+      badgeClass: "status-badge-warning",
+      calloutClass: "callout-warning",
+    },
+    info: {
+      icon: <Info className="size-4 shrink-0" />,
+      badgeClass: "",
+      calloutClass: "callout-info",
+    },
+  };
+
+  const visibleAlerts = alerts.filter((a) => !dismissedAlerts.has(a.id));
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Alerts</h1>
-        <p className="text-sm text-[var(--coollabs-subtle)]">
-          System alerts and warnings requiring attention.
+        <h1 className="text-xl font-semibold text-black dark:text-[var(--color-fg)]">Alerts</h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-[var(--color-fg-dim)]">
+          System alerts and notifications
         </p>
       </div>
 
-      <div className="space-y-3">
-        {items.map((alert) => {
-          const config = severityConfig[alert.severity];
-          const Icon = config.icon;
-          return (
-            <div
-              key={alert.id}
-              className="layer-card"
-            >
-              <div className="layer-card-body flex items-start gap-4">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${config.color}`}>
-                  <Icon className="h-4.5 w-4.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold">{alert.title}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${config.badge}`}>
-                      {alert.severity}
-                    </span>
-                    {!alert.acknowledged && (
-                      <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-500">
-                        Active
-                      </span>
-                    )}
+      {visibleAlerts.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <CheckCircle className="size-5 text-[var(--color-success)]" />
+          </div>
+          <h2 className="empty-state-title">All clear</h2>
+          <p className="empty-state-description">No active alerts at this time.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {visibleAlerts.map((alert) => {
+            const config = typeConfig[alert.severity as keyof typeof typeConfig] || typeConfig.info;
+            return (
+              <div key={alert.id} className={`callout ${config.calloutClass}`}>
+                <div className="flex items-start gap-2.5">
+                  {config.icon}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[12px] font-semibold">{alert.title}</div>
+                    <div className="mt-0.5 text-[12px] leading-5 opacity-75">{alert.message}</div>
                   </div>
-                  <p className="mt-1 text-sm text-[var(--coollabs-subtle)]">{alert.message}</p>
-                  <p className="mt-1 text-xs text-[var(--coollabs-faint)]">{alert.timestamp}</p>
-                </div>
-                {!alert.acknowledged && (
                   <button
-                    onClick={() => setResolveId(alert.id)}
-                    className="button button-secondary h-7 text-xs shrink-0"
+                    type="button"
+                    className="shrink-0 icon-button !size-6"
+                    onClick={() => setDismissedAlerts((prev) => new Set([...prev, alert.id]))}
+                    aria-label="Dismiss"
                   >
-                    <Check className="h-3.5 w-3.5" />
-                    Acknowledge
+                    <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {items.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--coollabs-line)] py-20">
-          <Info className="h-8 w-8 text-[var(--coollabs-subtle)]" />
-          <p className="mt-3 text-sm text-[var(--coollabs-subtle)]">No alerts</p>
+            );
+          })}
         </div>
       )}
-
-      <ConfirmModal
-        open={resolveId !== null}
-        onClose={() => setResolveId(null)}
-        onConfirm={() => {
-          setItems((prev) =>
-            prev.map((a) =>
-              a.id === resolveId ? { ...a, acknowledged: true } : a
-            )
-          );
-          toast.success("Alert acknowledged");
-        }}
-        title="Acknowledge Alert"
-        message="Mark this alert as acknowledged? It will no longer appear as active."
-        confirmLabel="Acknowledge"
-        variant="info"
-      />
     </div>
   );
 }

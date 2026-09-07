@@ -1,68 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { Save } from "lucide-react";
-
 export default function SettingsGeneralPage() {
-  const [workspaceName, setWorkspaceName] = useState("Default Team");
-  const [siteName, setSiteName] = useState("Dashboard");
-
   return (
-    <div className="space-y-6">
-      <div className="layer-card">
-        <div className="layer-card-header">
-          <h3>General Settings</h3>
-        </div>
-        <div className="layer-card-body space-y-4">
+    <div className="flex flex-col gap-6">
+      {/* Instance Settings */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-              Workspace Name
+            <h2>Instance settings</h2>
+            <p>Configure your instance name and general settings.</p>
+          </div>
+        </div>
+        <div className="application-settings-section-body grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Instance name
             </label>
-            <input
-              type="text"
-              value={workspaceName}
-              onChange={(e) => setWorkspaceName(e.target.value)}
-              className="input max-w-md"
-            />
+            <input type="text" defaultValue="My SaaS" className="input" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-              Site Name
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Default page
             </label>
-            <input
-              type="text"
-              value={siteName}
-              onChange={(e) => setSiteName(e.target.value)}
-              className="input max-w-md"
-            />
-          </div>
-          <button
-            onClick={() => toast.success("Settings saved")}
-            className="button button-primary"
-          >
-            <Save className="h-4 w-4" />
-            Save Changes
-          </button>
-        </div>
-      </div>
-
-      <div className="layer-card">
-        <div className="layer-card-header">
-          <h3>Appearance</h3>
-        </div>
-        <div className="layer-card-body space-y-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--coollabs-subtle)]">
-              Default Page Width
-            </label>
-            <select className="select input max-w-md">
-              <option value="full">Full width</option>
-              <option value="centered">Centered</option>
+            <select className="select">
+              <option>Dashboard</option>
+              <option>Applications</option>
+              <option>Projects</option>
             </select>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Server Timezone */}
+      <section className="application-settings-section">
+        <div className="application-settings-section-header">
+          <div>
+            <h2>Server timezone</h2>
+            <p>The timezone used for scheduling and log timestamps.</p>
+          </div>
+        </div>
+        <div className="application-settings-section-body">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--coollabs-subtle)]">
+              Timezone
+            </label>
+            <select className="select max-w-sm">
+              <option>UTC</option>
+              <option>America/New_York</option>
+              <option>Europe/London</option>
+              <option>Asia/Tokyo</option>
+            </select>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
