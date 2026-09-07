@@ -9,13 +9,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [pageWidth, setPageWidth] = useState("full");
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebarCollapsed");
+    const width = localStorage.getItem("pageWidth");
+    const onPageWidth = (e: Event) => setPageWidth((e as CustomEvent<string>).detail);
+    window.addEventListener("page-width-changed", onPageWidth);
     requestAnimationFrame(() => {
       if (stored === "true") setCollapsed(true);
+      if (width === "centered") setPageWidth("centered");
       setReady(true);
     });
+    return () => window.removeEventListener("page-width-changed", onPageWidth);
   }, []);
 
   const toggleSidebar = useCallback(() => {
@@ -78,11 +84,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <main
-        className={`bg-[var(--coollabs-canvas)] dark:bg-[var(--color-panel)] px-5 py-6 sm:px-8 lg:px-10 lg:pt-[calc(3rem+1.75rem)] lg:pb-10 ${
+        className={`min-h-screen bg-[var(--coollabs-canvas)] dark:bg-[var(--color-panel)] px-5 py-6 sm:px-8 lg:px-10 lg:pt-[calc(3rem+1.75rem)] lg:pb-10 ${
           collapsed ? "lg:ml-16" : "lg:ml-56"
         } ${ready ? "transition-[margin] duration-200" : ""}`}
       >
-        <div className="w-full max-w-none">
+        <div className={`w-full ${pageWidth === "centered" ? "mx-auto max-w-[1400px]" : "max-w-none"}`}>
           {children}
         </div>
       </main>

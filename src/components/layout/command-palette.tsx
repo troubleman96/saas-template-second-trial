@@ -5,21 +5,38 @@ import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import {
   LayoutDashboard,
-  AppWindow,
-  Settings,
-  User,
+  FolderGit2,
+  Terminal,
+  Server,
+  Cloud,
+  Database,
+  Archive,
+  Lock,
+  Users,
   Bell,
-  AlertTriangle,
+  Key,
+  Tag,
+  Settings,
   Search,
+  CreditCard,
 } from "lucide-react";
 
 const pages = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Applications", href: "/applications", icon: AppWindow },
-  { name: "Settings", href: "/settings/general", icon: Settings },
-  { name: "Profile", href: "/profile", icon: User },
-  { name: "Alerts", href: "/alerts", icon: AlertTriangle },
+  { name: "Projects", href: "/projects", icon: FolderGit2 },
+  { name: "Terminal", href: "/terminal", icon: Terminal },
+  { name: "Servers", href: "/servers", icon: Server },
+  { name: "Sources", href: "/sources", icon: Cloud },
+  { name: "Destinations", href: "/destinations", icon: Database },
+  { name: "S3 Storage", href: "/storages", icon: Archive },
+  { name: "Shared Variables", href: "/variables", icon: Lock },
+  { name: "Team", href: "/team", icon: Users },
   { name: "Notifications", href: "/notifications", icon: Bell },
+  { name: "Keys & Tokens", href: "/security", icon: Key },
+  { name: "Subscription", href: "/subscription", icon: CreditCard },
+  { name: "Tags", href: "/tags", icon: Tag },
+  { name: "Settings", href: "/settings/general", icon: Settings },
+  { name: "Profile", href: "/profile", icon: LayoutDashboard },
 ];
 
 export function CommandPalette() {
@@ -36,8 +53,15 @@ export function CommandPalette() {
         setOpen(false);
       }
     }
+    function handleOpen() {
+      setOpen(true);
+    }
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("open-command-palette", handleOpen);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("open-command-palette", handleOpen);
+    };
   }, []);
 
   if (!open) return null;
